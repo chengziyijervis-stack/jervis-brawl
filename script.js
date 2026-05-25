@@ -55,8 +55,8 @@ function gameLoop() {
     x += vx;
     y += vy;
 
-    x = Math.max(0, Math.min(window.innerWidth - 30, x));
-    y = Math.max(0, Math.min(window.innerHeight - 30, y));
+    x = Math.max(0, Math.min(window.innerWidth - 60, x));
+    y = Math.max(0, Math.min(window.innerHeight - 60, y));
 
     updatePosition();
 
