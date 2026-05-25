@@ -9,17 +9,6 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
-// ─── Menu → Game transition ───────────────────────────────────────────────────
-const mainmenu = document.getElementById('mainmenu');
-const playBtn  = document.getElementById('playBtn');
-
-playBtn.addEventListener('click', () => {
-    mainmenu.style.display = 'none';
-    canvas.style.display   = 'block';
-    // Reset player to center of screen when game starts
-    player.x = canvas.width  / 2;
-    player.y = canvas.height / 2;
-});
 
 // ─── Player settings ─────────────────────────────────────────────────────────
 const player = {
