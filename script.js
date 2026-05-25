@@ -1,8 +1,7 @@
-// ─── Canvas setup ────────────────────────────────────────────────────────────
+// ─── Canvas setup ─────────────────────────────────────────────────────────────
 const canvas = document.getElementById('gameCanvas');
 const ctx    = canvas.getContext('2d');
 
-// Always fill the window
 function resizeCanvas() {
     canvas.width  = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -10,24 +9,36 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 
+// ─── Menu → Game transition ───────────────────────────────────────────────────
+const mainmenu = document.getElementById('mainmenu');
+const playBtn  = document.getElementById('playBtn');
+
+playBtn.addEventListener('click', () => {
+    mainmenu.style.display = 'none';
+    canvas.style.display   = 'block';
+    // Reset player to center of screen when game starts
+    player.x = canvas.width  / 2;
+    player.y = canvas.height / 2;
+});
+
 // ─── Player settings ─────────────────────────────────────────────────────────
 const player = {
-    x: 400,          // starting position (center of body)
+    x: 400,
     y: 300,
-    bodyRadius: 24,  // size of the circle body
+    bodyRadius: 24,
 
-    // Barrel dimensions
-    barrelWidth:  10, // how thick the barrel is
-    barrelLength: 36, // how long the barrel is (starts at edge of circle)
+    // Barrel — slightly thicker and shorter
+    barrelWidth:  14,
+    barrelLength: 26,
 
-    // Movement
+    // Movement with acceleration
     vx: 0,
     vy: 0,
-    speed: 0.5,
+    speed: 0.5,      // acceleration per frame
     friction: 0.92,
     maxSpeed: 6,
 
-    // Aiming — angle toward the mouse (in radians)
+    // Aiming angle toward the mouse
     aimAngle: 0,
 };
 
@@ -44,17 +55,7 @@ const keys = {};
 window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true;  });
 window.addEventListener('keyup',   (e) => { keys[e.key.toLowerCase()] = false; });
 
-// ─── Walls ────────────────────────────────────────────────────────────────────
-// Each wall: { x, y, w, h }  — add more here to build your map
-const walls = [
-    { x: 300, y: 150, w: 200, h: 20 },
-    { x: 500, y: 300, w: 20,  h: 180 },
-    { x: 100, y: 350, w: 20,  h: 180 },
-];
-
 // ─── Collision helpers ────────────────────────────────────────────────────────
-
-// Check if circle overlaps a rectangle
 function circleHitsRect(cx, cy, r, rx, ry, rw, rh) {
     const nearestX = Math.max(rx, Math.min(cx, rx + rw));
     const nearestY = Math.max(ry, Math.min(cy, ry + rh));
@@ -63,7 +64,6 @@ function circleHitsRect(cx, cy, r, rx, ry, rw, rh) {
     return (dx * dx + dy * dy) < (r * r);
 }
 
-// Push the circle out of the rectangle it's overlapping
 function resolveCircleRect(cx, cy, r, rx, ry, rw, rh) {
     const nearestX = Math.max(rx, Math.min(cx, rx + rw));
     const nearestY = Math.max(ry, Math.min(cy, ry + rh));
@@ -77,78 +77,42 @@ function resolveCircleRect(cx, cy, r, rx, ry, rw, rh) {
     };
 }
 
-// ─── Drawing ──────────────────────────────────────────────────────────────────
+// Walls array — empty for now, add objects here when you want walls
+const walls = [];
 
+// ─── Drawing ──────────────────────────────────────────────────────────────────
 function drawPlayer() {
     const { x, y, bodyRadius, barrelWidth, barrelLength, aimAngle } = player;
 
-    // ── Circle body ──
-    ctx.beginPath();
-    ctx.arc(x, y, bodyRadius, 0, Math.PI * 2);
-    ctx.fillStyle   = '#78cbff';
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth   = 2;
-    ctx.stroke();
-
-    // ── Barrel (rotated to face mouse) ──
-    // Translate to the player's center, rotate, then draw outward from edge
+    // Barrel — drawn first so the circle overlaps it at the base
     ctx.save();
     ctx.translate(x, y);
     ctx.rotate(aimAngle);
-
-    ctx.fillStyle = '#aaaaaa';
+    ctx.fillStyle = '#78cbff';
     ctx.fillRect(
-        bodyRadius,               // starts at the edge of the circle
-        -barrelWidth / 2,         // centered vertically
-        barrelLength,             // extends outward
+        bodyRadius,           // starts at edge of circle
+        -barrelWidth / 2,     // centered on the aim axis
+        barrelLength,
         barrelWidth
     );
-
     ctx.restore();
-}
 
-function drawWalls() {
-    ctx.fillStyle   = '#555';
-    ctx.strokeStyle = '#888';
-    ctx.lineWidth   = 2;
-
-    for (const wall of walls) {
-        ctx.fillRect(wall.x, wall.y, wall.w, wall.h);
-        ctx.strokeRect(wall.x, wall.y, wall.w, wall.h);
-    }
-}
-
-function drawHitboxes() {
-    const { x, y, bodyRadius, barrelWidth, barrelLength, aimAngle } = player;
-
-    // Body circle hitbox (green)
+    // Circle body — drawn on top of barrel base for clean look
     ctx.beginPath();
     ctx.arc(x, y, bodyRadius, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(0,255,0,0.6)';
-    ctx.lineWidth   = 1.5;
-    ctx.stroke();
-
-    // Barrel hitbox (orange)
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(aimAngle);
-    ctx.strokeStyle = 'rgba(255,165,0,0.6)';
-    ctx.lineWidth   = 1.5;
-    ctx.strokeRect(bodyRadius, -barrelWidth / 2, barrelLength, barrelWidth);
-    ctx.restore();
+    ctx.fillStyle = '#78cbff';
+    ctx.fill();
 }
 
-// ─── Game loop ────────────────────────────────────────────────────────────────
-
+// ─── Update logic ─────────────────────────────────────────────────────────────
 function update() {
-    // Movement input
+    // Acceleration-based movement
     if (keys['w'] || keys['arrowup'])    player.vy -= player.speed;
     if (keys['s'] || keys['arrowdown'])  player.vy += player.speed;
     if (keys['a'] || keys['arrowleft'])  player.vx -= player.speed;
     if (keys['d'] || keys['arrowright']) player.vx += player.speed;
 
-    // Clamp and apply friction
+    // Clamp speed and apply friction
     player.vx = Math.max(-player.maxSpeed, Math.min(player.maxSpeed, player.vx)) * player.friction;
     player.vy = Math.max(-player.maxSpeed, Math.min(player.maxSpeed, player.vy)) * player.friction;
 
@@ -158,38 +122,30 @@ function update() {
     player.x += player.vx;
     player.y += player.vy;
 
-    // Screen boundary collision
+    // Screen boundary
     player.x = Math.max(player.bodyRadius, Math.min(canvas.width  - player.bodyRadius, player.x));
     player.y = Math.max(player.bodyRadius, Math.min(canvas.height - player.bodyRadius, player.y));
 
-    // Wall collision (circle hitbox only — the barrel passes through)
+    // Wall collision (ready for when you add walls)
     for (const wall of walls) {
         if (circleHitsRect(player.x, player.y, player.bodyRadius, wall.x, wall.y, wall.w, wall.h)) {
-            const resolved = resolveCircleRect(player.x, player.y, player.bodyRadius, wall.x, wall.y, wall.w, wall.h);
-            player.x  = resolved.cx;
-            player.y  = resolved.cy;
+            const r = resolveCircleRect(player.x, player.y, player.bodyRadius, wall.x, wall.y, wall.w, wall.h);
+            player.x  = r.cx;
+            player.y  = r.cy;
             player.vx = 0;
             player.vy = 0;
         }
     }
 
-    // Aim the barrel toward the mouse
-    // Math.atan2 gives the angle between two points
+    // Aim barrel toward mouse
     player.aimAngle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
 }
 
-function draw() {
-    // Clear screen
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    drawWalls();
-    drawPlayer();
-    drawHitboxes(); // remove this line when you no longer need to see the hitboxes
-}
-
+// ─── Game loop ────────────────────────────────────────────────────────────────
 function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     update();
-    draw();
+    drawPlayer();
     requestAnimationFrame(gameLoop);
 }
 
