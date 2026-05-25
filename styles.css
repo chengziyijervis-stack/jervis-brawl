@@ -12,8 +12,4 @@ body {
   height: 60px;
   width: 60px;
   position: absolute;
-  background-image: url('images/character.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
 }
