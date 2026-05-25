@@ -1,15 +1,16 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 body {
-  background-color: rgba(0, 0, 0, 1);
+  background-color: #000;
+  overflow: hidden;
 }
 
-.mainmenu {
-  color: rgba(255, 255, 255, 1);
-  text-align: center;
-  font-family: 'DotGothic16', monospace;
-}
-
-#character{
-  height: 60px;
-  width: 60px;
-  position: absolute;
+#gameCanvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
 }
