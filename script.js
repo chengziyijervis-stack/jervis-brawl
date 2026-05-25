@@ -90,7 +90,7 @@ function drawPlayer() {
     ctx.rotate(aimAngle);
     ctx.fillStyle = '#78cbff';
     ctx.fillRect(
-        bodyRadius,           // starts at edge of circle
+        bodyRadius - 5,       // slightly inside the circle edge to close the gap
         -barrelWidth / 2,     // centered on the aim axis
         barrelLength,
         barrelWidth
